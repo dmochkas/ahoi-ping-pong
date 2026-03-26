@@ -226,14 +226,13 @@ static packet_decode_status_t ahoi_serial_protocol_decode(mem_reader_t* reader, 
     return ret;
 }
 
-// TODO: Log
-// TODO: Something ugly here. Need to refactor
 static int send_ahoi_cmd(int fd, uint8_t* rsp_buf, size_t buf_len, size_t* rsp_len) {
     int ret = -1;
     if (!AHOI_IS_COMMAND_PACKET(&staging_packet)) {
         fprintf(stderr, "Expecting ahoi command packet\n");
         return ret;
     }
+    uint8_t cmd_id = staging_packet.type;
 
     // TODO: Ensure that there is no data in read in the socket
 
@@ -284,7 +283,7 @@ static int send_ahoi_cmd(int fd, uint8_t* rsp_buf, size_t buf_len, size_t* rsp_l
 
     }
 
-    if (!AHOI_IS_SERIAL_ACK(&staging_packet)) {
+    if (staging_packet.type != cmd_id) {
         fprintf(stderr, "Ahoi cmd is malformed\n");
         goto finish;
     }
@@ -297,6 +296,7 @@ static int send_ahoi_cmd(int fd, uint8_t* rsp_buf, size_t buf_len, size_t* rsp_l
         memcpy(rsp_buf, staging_packet.payload, staging_packet.pl_size);
         *rsp_len = staging_packet.pl_size;
     }
+    ret = 1;
     finish:
     return ret;
 }

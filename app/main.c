@@ -33,10 +33,17 @@ static void on_packet_received(ahoi_packet_t *pkt)
     if (pkt == NULL || pkt->pl_size != ping_len) {
         return;
     }
-
-    if (pkt->payload[0] != ping_rule_id) {
+    if (pkt->dst != AHOI_ID) {
         return;
     }
+    print_packet(pkt);
+
+    if (pkt->payload[0] != ping_rule_id) {
+        printf("Packet not recognized, discarding...\n");
+        return;
+    }
+
+    printf("Sending pong back...\n");
 
     send_pong_packet(pkt);
 }
@@ -55,7 +62,11 @@ int main(void) {
     }
 
     fds.fd = g_fd;
-    set_ahoi_id(g_fd, AHOI_ID);
+    if (set_ahoi_id(g_fd, AHOI_ID) < 0) {
+        perror("set_ahoi_id");
+        return -1;
+    }
+    printf("ID 0x%02x set ok\n", AHOI_ID);
     set_msg_handler(on_packet_received);
 
     while (1) {
